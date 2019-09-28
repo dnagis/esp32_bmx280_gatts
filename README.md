@@ -19,9 +19,7 @@ gatttool -b 30:AE:A4:04:C3:5A --char-read -a 0x002a
 parsing en bash:
 retour_gatttool=`/initrd/mnt/dev_save/packages/bluez-5.50/attrib/gatttool -b 30:AE:A4:04:C3:5A --char-read -a 0x002a`  
 read -ra ARRAY <<< "${retour_gatttool#"Characteristic value/descriptor: "}" #syntaxe array:${ARRAY[0]}  
-printf "temp: %02d.%02d\n" $((0x${ARRAY[0]})) $((0x${ARRAY[1]})) #${ARRAY[2]} = temp_pos  
-printf "pres: %i.%02d\n" `expr $((0x${ARRAY[3]})) + 872` $((0x${ARRAY[4]}))  
-printf "hum: %02d.%02d\n" $((0x${ARRAY[5]})) $((0x${ARRAY[6]}))  
+printf "`date` temp: %02d.%02d pres: %i.%02d hum: %02d.%02d\n" $((0x${ARRAY[0]})) $((0x${ARRAY[1]})) `expr $((0x${ARRAY[3]})) + 872` $((0x${ARRAY[4]})) $((0x${ARRAY[5]})) $((0x${ARRAY[6]}))
 
 
 
