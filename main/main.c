@@ -101,8 +101,8 @@ static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = false,
-    .min_interval = 0x0006, //slave connection min interval, Time = min_interval * 1.25 msec
-    .max_interval = 0x0010, //slave connection max interval, Time = max_interval * 1.25 msec
+    .min_interval = 0x0c80, //0x0006 slave connection min interval, Time = min_interval * 1.25 msec
+    .max_interval = 0x0c80, //0x0010 slave connection max interval, Time = max_interval * 1.25 msec
     .appearance = 0x00,
     .manufacturer_len = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data =  NULL, //&test_manufacturer[0],
@@ -692,6 +692,21 @@ static void env_sensor_callback(env_data_t* env_data) {
 		env_data_record_t* r = last_env_data + env_data->sensor_idx;
 		r->timestamp = oap_epoch_sec();
 		memcpy(&last_env_data->env_data, env_data, sizeof(env_data_t));
+		
+		//Envoi par notify de chez GATT
+		bool temp_pos = true;
+        if (env_data->temp < 0) temp_pos = false;
+		uint8_t notify_data[7];
+		notify_data[0]=(int)fabs(env_data->temp); //fabs = valeur absolue d'un double (gestion des temps negs)
+		notify_data[1] = ((int)(fabs(env_data->temp)*100)%100);
+		if (temp_pos == true) notify_data[2] = 1; else notify_data[2] = 0;
+        notify_data[3] = ((int)fabs(env_data->pressure-872)); //ajouter 1000-(256/2)=872 pour récupérer
+        notify_data[4] = ((int)(fabs(env_data->pressure)*100)%100);
+        notify_data[5] = (int)fabs(env_data->humidity);;
+        notify_data[6] = ((int)(fabs(env_data->humidity)*100)%100);
+        //les paramètres hard codés car fixe quand bluez
+        esp_ble_gatts_send_indicate(0x03, 0, 0x002b, sizeof(notify_data), notify_data, false);
+			
 	} else {
 		ESP_LOGE(TAG, "env (%d) - invalid sensor", env_data->sensor_idx);
 	}
@@ -702,7 +717,7 @@ static void env_sensors_init() {
 	memset(bmx280_config, 0, sizeof(bmx280_config_t)*2);
 
 	if (bmx280_set_hardware_config(&bmx280_config[0], 0) == ESP_OK) {
-		bmx280_config[0].interval = 60000;
+		bmx280_config[0].interval = 30000;
 		bmx280_config[0].callback = &env_sensor_callback;
 
 		if (bmx280_init(&bmx280_config[0]) != ESP_OK) {
