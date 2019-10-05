@@ -704,8 +704,11 @@ static void env_sensor_callback(env_data_t* env_data) {
         notify_data[4] = ((int)(fabs(env_data->pressure)*100)%100);
         notify_data[5] = (int)fabs(env_data->humidity);;
         notify_data[6] = ((int)(fabs(env_data->humidity)*100)%100);
-        //les paramètres hard codés car fixe quand bluez
-        esp_ble_gatts_send_indicate(0x03, 0, 0x002b, sizeof(notify_data), notify_data, false);
+        //esp_ble_gatts_send_indicate() --> copié à partir de la callback gatts_profile_a_event_handler#WRITE_EVENT
+        //paramètres hard codés car fixes accross connections
+        //arg3. 1st shot: pour bluez gatttool: 0x002b, marche aussi avec un ou deux autres je crois).
+        //arg3. second shot: pour android: gl_profile_tab[PROFILE_A_APP_ID].char_handle --> j'ai eu un cul monstre que ça marche...
+        esp_ble_gatts_send_indicate(0x03, 0, gl_profile_tab[PROFILE_A_APP_ID].char_handle, sizeof(notify_data), notify_data, false);
 			
 	} else {
 		ESP_LOGE(TAG, "env (%d) - invalid sensor", env_data->sensor_idx);
@@ -717,7 +720,7 @@ static void env_sensors_init() {
 	memset(bmx280_config, 0, sizeof(bmx280_config_t)*2);
 
 	if (bmx280_set_hardware_config(&bmx280_config[0], 0) == ESP_OK) {
-		bmx280_config[0].interval = 30000;
+		bmx280_config[0].interval = 2000;
 		bmx280_config[0].callback = &env_sensor_callback;
 
 		if (bmx280_init(&bmx280_config[0]) != ESP_OK) {
