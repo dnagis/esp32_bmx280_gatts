@@ -29,6 +29,9 @@
 static const char *TAG = "bmx280";
 static const char *GATTS_TAG = "gatts";
 
+//selon si tu veux notifications
+static const  bool NOTIFICATIONS = false;
+
 typedef struct {
 	env_data_t env_data;
 	long timestamp;
@@ -53,7 +56,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DESCR_UUID_TEST_B     0x2222
 #define GATTS_NUM_HANDLE_TEST_B     4
 
-#define TEST_DEVICE_NAME            "ESP_GATTS_DEMO"
+#define TEST_DEVICE_NAME            "SALON_ENV"
 #define TEST_MANUFACTURER_DATA_LEN  17
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
@@ -694,21 +697,23 @@ static void env_sensor_callback(env_data_t* env_data) {
 		memcpy(&last_env_data->env_data, env_data, sizeof(env_data_t));
 		
 		//Envoi par notify de chez GATT
-		bool temp_pos = true;
-        if (env_data->temp < 0) temp_pos = false;
-		uint8_t notify_data[7];
-		notify_data[0]=(int)fabs(env_data->temp); //fabs = valeur absolue d'un double (gestion des temps negs)
-		notify_data[1] = ((int)(fabs(env_data->temp)*100)%100);
-		if (temp_pos == true) notify_data[2] = 1; else notify_data[2] = 0;
-        notify_data[3] = ((int)fabs(env_data->pressure-872)); //ajouter 1000-(256/2)=872 pour récupérer
-        notify_data[4] = ((int)(fabs(env_data->pressure)*100)%100);
-        notify_data[5] = (int)fabs(env_data->humidity);;
-        notify_data[6] = ((int)(fabs(env_data->humidity)*100)%100);
-        //esp_ble_gatts_send_indicate() --> copié à partir de la callback gatts_profile_a_event_handler#WRITE_EVENT
-        //paramètres hard codés car fixes accross connections
-        //arg3. 1st shot: pour bluez gatttool: 0x002b, marche aussi avec un ou deux autres je crois).
-        //arg3. second shot: pour android: gl_profile_tab[PROFILE_A_APP_ID].char_handle --> j'ai eu un cul monstre que ça marche...
-        esp_ble_gatts_send_indicate(0x03, 0, gl_profile_tab[PROFILE_A_APP_ID].char_handle, sizeof(notify_data), notify_data, false);
+		if (NOTIFICATIONS) {
+			bool temp_pos = true;
+	        if (env_data->temp < 0) temp_pos = false;
+			uint8_t notify_data[7];
+			notify_data[0]=(int)fabs(env_data->temp); //fabs = valeur absolue d'un double (gestion des temps negs)
+			notify_data[1] = ((int)(fabs(env_data->temp)*100)%100);
+			if (temp_pos == true) notify_data[2] = 1; else notify_data[2] = 0;
+	        notify_data[3] = ((int)fabs(env_data->pressure-872)); //ajouter 1000-(256/2)=872 pour récupérer
+	        notify_data[4] = ((int)(fabs(env_data->pressure)*100)%100);
+	        notify_data[5] = (int)fabs(env_data->humidity);;
+	        notify_data[6] = ((int)(fabs(env_data->humidity)*100)%100);
+	        //esp_ble_gatts_send_indicate() --> copié à partir de la callback gatts_profile_a_event_handler#WRITE_EVENT
+	        //paramètres hard codés car fixes accross connections
+	        //arg3. 1st shot: pour bluez gatttool: 0x002b, marche aussi avec un ou deux autres je crois).
+	        //arg3. second shot: pour android: gl_profile_tab[PROFILE_A_APP_ID].char_handle --> j'ai eu un cul monstre que ça marche...
+	        esp_ble_gatts_send_indicate(0x03, 0, gl_profile_tab[PROFILE_A_APP_ID].char_handle, sizeof(notify_data), notify_data, false);
+		}
 			
 	} else {
 		ESP_LOGE(TAG, "env (%d) - invalid sensor", env_data->sensor_idx);
@@ -720,7 +725,7 @@ static void env_sensors_init() {
 	memset(bmx280_config, 0, sizeof(bmx280_config_t)*2);
 
 	if (bmx280_set_hardware_config(&bmx280_config[0], 0) == ESP_OK) {
-		bmx280_config[0].interval = 2000;
+		bmx280_config[0].interval = 600000;
 		bmx280_config[0].callback = &env_sensor_callback;
 
 		if (bmx280_init(&bmx280_config[0]) != ESP_OK) {
@@ -790,6 +795,8 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-
+    //restart each 24h
+	vTaskDelay(86400000 / portTICK_PERIOD_MS);
+	esp_restart();
 
 }
