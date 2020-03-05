@@ -30,7 +30,7 @@ static const char *TAG = "bmx280";
 static const char *GATTS_TAG = "gatts";
 
 //selon si tu veux notifications
-static const  bool NOTIFICATIONS = false;
+static const  bool NOTIFICATIONS = true;
 
 typedef struct {
 	env_data_t env_data;
@@ -56,7 +56,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DESCR_UUID_TEST_B     0x2222
 #define GATTS_NUM_HANDLE_TEST_B     4
 
-#define TEST_DEVICE_NAME            "SALON_ENV"
+#define TEST_DEVICE_NAME            "ENV_DEVBOARD"
 #define TEST_MANUFACTURER_DATA_LEN  17
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
@@ -725,7 +725,7 @@ static void env_sensors_init() {
 	memset(bmx280_config, 0, sizeof(bmx280_config_t)*2);
 
 	if (bmx280_set_hardware_config(&bmx280_config[0], 0) == ESP_OK) {
-		bmx280_config[0].interval = 600000;
+		bmx280_config[0].interval = 10000; //en ms
 		bmx280_config[0].callback = &env_sensor_callback;
 
 		if (bmx280_init(&bmx280_config[0]) != ESP_OK) {
