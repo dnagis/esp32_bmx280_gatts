@@ -1,22 +1,27 @@
-# bmx280 présenté en gatt (plus mainstream)
+# bm[x]280 servi en gatt
 
-départ: esp-idf/examples/get-started/hello_world
+esp-idf/examples/bluetooth/bluedroid/ble/gatt_server
+pour l'explication services char descriptor je l'ai mise dans le java de bluevvnx (android_bt_java) et dans morphotox/bluetooth
+
 
 # bmx280
-Attention il faut ajouter le dir "components/bmx280" qui contient include/bmx280.h (adapter l'address 0x76 ou 0x77)
-	tu peux alors #include "i2c_bme280.h" et "bmx280.h"
-importé le code de esp32_bmp280_i2c -> 
+Attention il faut ajouter le dir "components/bmx280" depuis mon repo https://github.com/dnagis/esp32_bmp280_i2c
+	nécessaire pour #include "i2c_bme280.h" et "bmx280.h"
+	les réglages se font dans components/bmx280/include/bmx280.h (adapter l'address 0x76 ou 0x77 pour i2c et les pins SDA et SCL)
+	
+# Design
 lecture capteur triggered par callback, c'est pas toi qui actionne -> donc updater une variable
 
 # gatts
 Attention make menuconfig -> activer components/bluetooth
-esp-idf/examples/bluetooth/bluedroid/ble/gatt_server
+
 
 
 # Modes de transmission: 
 
 1) Soit l'observer lit avec char-read:
 en bluez: gatttool -b 30:AE:A4:04:C3:5A --char-read -a 0x002a
+en java: mBluetoothGatt.readCharacteristic(mCharacteristic);
 
 puis bluez parsing en bash:
 retour_gatttool=`/initrd/mnt/dev_save/packages/bluez-5.50/attrib/gatttool -b 30:AE:A4:04:C3:5A --char-read -a 0x002a`  

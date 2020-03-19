@@ -30,7 +30,7 @@ static const char *TAG = "bmx280";
 static const char *GATTS_TAG = "gatts";
 
 //selon si tu veux notifications
-static const  bool NOTIFICATIONS = true;
+static const  bool NOTIFICATIONS = false;
 
 typedef struct {
 	env_data_t env_data;
